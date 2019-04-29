@@ -1,0 +1,180 @@
+#添加导入模块
+import pandas as pd
+import numpy as np
+
+# 导入数据
+df_train = pd.read_csv('C:/Users/wolf/Desktop/员工离职预测训练赛/pfm_train.csv')
+df_train.head()
+#df.describe()
+
+# 查看去重-性别-Gender
+print (df_train["Gender"].unique())
+#将性别列 "男性","女性" 用“1”，“2”来表示；
+df_train.loc[df_train["Gender"] == "Male", "Gender"] = 0
+df_train.loc[df_train["Gender"] == "Female","Gender"] = 1
+
+# 查看去重-商务差旅频率-BusinessTravel
+print (df_train["BusinessTravel"].unique())
+df_train.loc[df_train["BusinessTravel"] == "Travel_Rarely", "BusinessTravel"] = 0
+df_train.loc[df_train["BusinessTravel"] == "Travel_Frequently", "BusinessTravel"] = 1
+df_train.loc[df_train["BusinessTravel"] == "Non-Travel", "BusinessTravel"] = 2
+
+#查看去重-员工所在部门-Department
+print (df_train["Department"].unique())
+df_train.loc[df_train["Department"] == "Sales", "Department"] = 0
+df_train.loc[df_train["Department"] == "Research & Development", "Department"] = 1
+df_train.loc[df_train["Department"] == "Human Resources", "Department"] = 2
+
+#查看去重-员工所学习的专业领域-EducationField
+print (df_train["EducationField"].unique())
+df_train.loc[df_train["EducationField"] == "Life Sciences", "EducationField"] = 0
+df_train.loc[df_train["EducationField"] == "Medical", "EducationField"] = 1
+df_train.loc[df_train["EducationField"] == "Other", "EducationField"] = 2
+df_train.loc[df_train["EducationField"] == "Technical Degree", "EducationField"] = 3
+df_train.loc[df_train["EducationField"] == "Human Resources", "EducationField"] = 4
+df_train.loc[df_train["EducationField"] == "Marketing", "EducationField"] = 5
+
+#查看去重-工作角色-JobRole
+print (df_train["JobRole"].unique())
+df_train.loc[df_train["JobRole"] == "Manufacturing Director", "JobRole"] = 0
+df_train.loc[df_train["JobRole"] == "Laboratory Technician", "JobRole"] = 1
+df_train.loc[df_train["JobRole"] == "Sales Executive", "JobRole"] = 2
+df_train.loc[df_train["JobRole"] == "Research Scientist", "JobRole"] = 3
+df_train.loc[df_train["JobRole"] == "Healthcare Representative", "JobRole"] = 4
+df_train.loc[df_train["JobRole"] == "Sales Representative", "JobRole"] = 5
+df_train.loc[df_train["JobRole"] == "Research Director", "JobRole"] = 6
+df_train.loc[df_train["JobRole"] == "Manager", "JobRole"] = 7
+df_train.loc[df_train["JobRole"] == "Human Resources", "JobRole"] = 8
+
+#查看去重-员工婚姻状况-MaritalStatus
+print (df_train["MaritalStatus"].unique())
+df_train.loc[df_train["MaritalStatus"] == "Divorced", "MaritalStatus"] = 0
+df_train.loc[df_train["MaritalStatus"] == "Single", "MaritalStatus"] = 1
+df_train.loc[df_train["MaritalStatus"] == "Married", "MaritalStatus"] = 2
+
+#查看去重-是否加班-OverTime
+print (df_train["OverTime"].unique())
+df_train.loc[df_train["OverTime"] == "No", "OverTime"] = 0
+df_train.loc[df_train["OverTime"] == "Yes", "OverTime"] = 1
+
+
+#引入逻辑回归算法
+from sklearn import cross_validation
+#逻辑回归
+from sklearn.linear_model import LogisticRegression
+
+#训练集交叉验证，得到平均值
+from sklearn.model_selection import KFold
+
+#选取可用的输入特征
+predictors = ['Age', 'BusinessTravel', 'Department', 'DistanceFromHome',
+       'Education', 'EducationField', 'EmployeeNumber',
+       'EnvironmentSatisfaction', 'Gender', 'JobInvolvement', 'JobLevel',
+       'JobRole', 'JobSatisfaction', 'MaritalStatus', 'MonthlyIncome',
+       'NumCompaniesWorked', 'OverTime', 'PercentSalaryHike',
+       'PerformanceRating', 'RelationshipSatisfaction', 'StandardHours',
+       'StockOptionLevel', 'TotalWorkingYears', 'TrainingTimesLastYear',
+       'WorkLifeBalance', 'YearsAtCompany', 'YearsInCurrentRole',
+       'YearsSinceLastPromotion', 'YearsWithCurrManager']
+
+alg = LogisticRegression(random_state=1)
+
+#样本平均分成3份，3折交叉验证
+kf = KFold(n_splits=3,shuffle=False,random_state=1) 
+
+predictions = []
+for train,test in kf.split(df_train):
+    
+    train_predictors = (df_train[predictors].iloc[train,:])
+    
+    train_target = df_train["Attrition"].iloc[train]
+    
+    alg.fit(train_predictors, train_target)
+    
+    test_predictions = alg.predict(df_train[predictors].iloc[test,:])
+    
+    predictions.append(test_predictions)
+
+#使用sklearn库里面的交叉验证函数获取预测准确率分数
+scores = cross_validation.cross_val_score(alg, df_train[predictors], df_train["Attrition"], cv=3)
+
+#使用交叉验证分数的平均值作为最终的准确率
+print(scores.mean())
+
+
+# 导入测试数据集
+df_test = pd.read_csv('C:/Users/wolf/Desktop/员工离职预测训练赛/pfm_test.csv')
+df_test.head()
+
+#新增：对测试集数据进行预处理，并进行结果预测
+# 查看去重-性别-Gender
+print (df_test["Gender"].unique())
+#将性别列 "男性","女性" 用“1”，“2”来表示；
+df_test.loc[df_test["Gender"] == "Male", "Gender"] = 0
+df_test.loc[df_test["Gender"] == "Female","Gender"] = 1
+
+# 查看去重-商务差旅频率-BusinessTravel
+print (df_test["BusinessTravel"].unique())
+df_test.loc[df_test["BusinessTravel"] == "Travel_Rarely", "BusinessTravel"] = 0
+df_test.loc[df_test["BusinessTravel"] == "Travel_Frequently", "BusinessTravel"] = 1
+df_test.loc[df_test["BusinessTravel"] == "Non-Travel", "BusinessTravel"] = 2
+
+#查看去重-员工所在部门-Department
+print (df_test["Department"].unique())
+df_test.loc[df_test["Department"] == "Sales", "Department"] = 0
+df_test.loc[df_test["Department"] == "Research & Development", "Department"] = 1
+df_test.loc[df_test["Department"] == "Human Resources", "Department"] = 2
+
+#查看去重-员工所学习的专业领域-EducationField
+print (df_test["EducationField"].unique())
+df_test.loc[df_test["EducationField"] == "Life Sciences", "EducationField"] = 0
+df_test.loc[df_test["EducationField"] == "Medical", "EducationField"] = 1
+df_test.loc[df_test["EducationField"] == "Other", "EducationField"] = 2
+df_test.loc[df_test["EducationField"] == "Technical Degree", "EducationField"] = 3
+df_test.loc[df_test["EducationField"] == "Human Resources", "EducationField"] = 4
+df_test.loc[df_test["EducationField"] == "Marketing", "EducationField"] = 5
+
+#查看去重-工作角色-JobRole
+print (df_test["JobRole"].unique())
+df_test.loc[df_test["JobRole"] == "Manufacturing Director", "JobRole"] = 0
+df_test.loc[df_test["JobRole"] == "Laboratory Technician", "JobRole"] = 1
+df_test.loc[df_test["JobRole"] == "Sales Executive", "JobRole"] = 2
+df_test.loc[df_test["JobRole"] == "Research Scientist", "JobRole"] = 3
+df_test.loc[df_test["JobRole"] == "Healthcare Representative", "JobRole"] = 4
+df_test.loc[df_test["JobRole"] == "Sales Representative", "JobRole"] = 5
+df_test.loc[df_test["JobRole"] == "Research Director", "JobRole"] = 6
+df_test.loc[df_test["JobRole"] == "Manager", "JobRole"] = 7
+df_test.loc[df_test["JobRole"] == "Human Resources", "JobRole"] = 8
+
+#查看去重-员工婚姻状况-MaritalStatus
+print (df_test["MaritalStatus"].unique())
+df_test.loc[df_test["MaritalStatus"] == "Divorced", "MaritalStatus"] = 0
+df_test.loc[df_test["MaritalStatus"] == "Single", "MaritalStatus"] = 1
+df_test.loc[df_test["MaritalStatus"] == "Married", "MaritalStatus"] = 2
+
+#查看去重-是否加班-OverTime
+print (df_test["OverTime"].unique())
+df_test.loc[df_test["OverTime"] == "No", "OverTime"] = 0
+df_test.loc[df_test["OverTime"] == "Yes", "OverTime"] = 1
+
+#选取特征，引入模型预测
+test_features = ['Age', 'BusinessTravel', 'Department', 'DistanceFromHome',
+       'Education', 'EducationField', 'EmployeeNumber',
+       'EnvironmentSatisfaction', 'Gender', 'JobInvolvement', 'JobLevel',
+       'JobRole', 'JobSatisfaction', 'MaritalStatus', 'MonthlyIncome',
+       'NumCompaniesWorked', 'OverTime', 'PercentSalaryHike',
+       'PerformanceRating', 'RelationshipSatisfaction', 'StandardHours',
+       'StockOptionLevel', 'TotalWorkingYears', 'TrainingTimesLastYear',
+       'WorkLifeBalance', 'YearsAtCompany', 'YearsInCurrentRole',
+       'YearsSinceLastPromotion', 'YearsWithCurrManager'] 
+#构造测试集的Survived列，
+df_test["Attrition"] = -1
+
+test_predictors = df_test[test_features]
+df_test["Attrition"] = alg.predict(test_predictors)
+
+#查看预测数据
+df_test.head(10)
+
+#导出预测结果数据
+df_test.to_csv('C:/Users/wolf/Desktop/员工离职预测训练赛/df_test.csv', encoding='utf-8', index=False)
